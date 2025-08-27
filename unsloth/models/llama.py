@@ -2655,6 +2655,7 @@ class FastLlamaModel:
             print("Unsloth: Applying QAT to mitigate quantization degradation")
             model = _prepare_model_for_qat(model, qat_scheme)
         pass
+        print(model)
 
         model._saved_temp_tokenizer = _saved_temp_tokenizer
 
