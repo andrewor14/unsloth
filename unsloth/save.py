@@ -30,6 +30,7 @@ from .kernels import fast_dequantize, QUANT_STATE, get_lora_parameters_bias
 import subprocess
 import psutil
 import re
+import tempfile
 from transformers.models.llama.modeling_llama import logger
 from .tokenizer_utils import fix_sentencepiece_gguf
 from huggingface_hub import HfApi

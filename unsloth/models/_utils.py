@@ -1555,6 +1555,10 @@ def _prepare_model_for_qat(model: torch.nn.Module, qat_scheme: str) -> torch.nn.
         filter_fn = lambda m, _: isinstance(m, torch.nn.Linear) and m.in_features >= group_size
     elif qat_scheme == "fp8-fp8":
         base_config = Float8DynamicActivationFloat8WeightConfig(granularity=PerRow())
+    elif qat_scheme == "int8-int4":
+        group_size = 32
+        base_config = Int8DynamicActivationInt4WeightConfig(group_size=group_size)
+        filter_fn = lambda m, _: isinstance(m, torch.nn.Linear) and m.in_features >= group_size
     else:
         raise ValueError(f"Unexpected QAT scheme {qat_scheme}")
     pass
