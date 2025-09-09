@@ -1,7 +1,7 @@
 LOG_DIR="${LOG_DIR:-/home/andrewor/local/logs/unsloth}"
 FULL_FINETUNING="${FULL_FINETUNING:-true}"
 
-export QUANTIZATION_SCHEME="fp8-int4"
+export QUANTIZATION_SCHEME="${QUANTIZATION_SCHEME:-fp8-int4}"
 
 # Finetune
 if [[ "$SKIP_FINETUNE" != "true" ]]; then

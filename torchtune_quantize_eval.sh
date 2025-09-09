@@ -26,6 +26,12 @@ elif [[ "$QUANTIZATION_SCHEME" == "fp8-int4" ]]; then
 elif [[ "$QUANTIZATION_SCHEME" == "int8-int4" ]]; then
     QUANTIZER="torchtune.training.quantization.Int8DynActInt4WeightQuantizer"
     QUANTIZATION_SCHEME="8da4w"
+elif [[ "$QUANTIZATION_SCHEME" == "int4" ]]; then
+    QUANTIZER="torchtune.training.quantization.Int4WeightOnlyQuantizer"
+    QUANTIZATION_SCHEME="4w"
+else
+    echo "Unknown quantization scheme $QUANTIZATION_SCHEME"
+    exit 1
 fi
 
 

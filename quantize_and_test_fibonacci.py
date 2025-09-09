@@ -3,6 +3,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TorchAoConfig, Tex
 from torchao.quantization import (
     Float8DynamicActivationInt4WeightConfig,
     Float8DynamicActivationFloat8WeightConfig,
+    Int4WeightOnlyConfig,
     Int8DynamicActivationInt4WeightConfig,
 )
 
@@ -19,6 +20,8 @@ if quantization_scheme is not None:
         ao_config = Float8DynamicActivationFloat8WeightConfig()
     elif quantization_scheme == "int8-int4":
         ao_config = Int8DynamicActivationInt4WeightConfig()
+    elif quantization_scheme == "int4":
+        ao_config = Int4WeightOnlyConfig()
     else:
         raise ValueError(f"Unknown quantization scheme {quantization_scheme}")
     quantization_config = TorchAoConfig(ao_config)

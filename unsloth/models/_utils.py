@@ -1544,6 +1544,8 @@ def _prepare_model_for_qat(model: torch.nn.Module, qat_scheme: str) -> torch.nn.
     from torchao.quantization import (
         Float8DynamicActivationInt4WeightConfig,
         Float8DynamicActivationFloat8WeightConfig,
+        Int8DynamicActivationInt4WeightConfig,
+        Int4WeightOnlyConfig,
         PerRow,
         quantize_,
     )
@@ -1558,6 +1560,10 @@ def _prepare_model_for_qat(model: torch.nn.Module, qat_scheme: str) -> torch.nn.
     elif qat_scheme == "int8-int4":
         group_size = 32
         base_config = Int8DynamicActivationInt4WeightConfig(group_size=group_size)
+        filter_fn = lambda m, _: isinstance(m, torch.nn.Linear) and m.in_features >= group_size
+    elif qat_scheme == "int4":
+        group_size = 128
+        base_config = Int4WeightOnlyConfig(group_size=group_size)
         filter_fn = lambda m, _: isinstance(m, torch.nn.Linear) and m.in_features >= group_size
     else:
         raise ValueError(f"Unexpected QAT scheme {qat_scheme}")
