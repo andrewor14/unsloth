@@ -1,5 +1,6 @@
 LOG_DIR="${LOG_DIR:-/home/andrewor/local/logs/unsloth}"
 FULL_FINETUNING="${FULL_FINETUNING:-true}"
+MODEL="${MODEL:-Llama3.1-8B}"
 
 export QUANTIZATION_SCHEME="${QUANTIZATION_SCHEME:-fp8-int4}"
 
@@ -25,7 +26,7 @@ fi
 do_eval() {
     local MODEL_DIR=$1
     export MODEL_DIR
-    LOG_DIR="$MODEL_DIR" MODEL="Llama3.1-8B" ./torchtune_quantize_eval.sh
+    #LOG_DIR="$MODEL_DIR" MODEL="$MODEL" ./torchtune_quantize_eval.sh
     env -u QUANTIZATION_SCHEME python quantize_and_test_fibonacci.py > "${MODEL_DIR}/fib_eval_float.log" 2>&1
     python quantize_and_test_fibonacci.py > "${MODEL_DIR}/fib_eval_quantized.log" 2>&1
     accelerate launch -m lm_eval --model hf --model_args pretrained="${MODEL_DIR}" --tasks wikitext --batch_size 2 > "${MODEL_DIR}/lm_eval_float.log" 2>&1
