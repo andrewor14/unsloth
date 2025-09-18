@@ -1,19 +1,5 @@
-# =========================================================================================
-#  Fine-tuning script based on https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Llama3.2_%281B_and_3B%29-Conversational.ipynb
-# =========================================================================================
-
 import os
-
 from unsloth import FastLanguageModel
-from unsloth.chat_templates import (
-    get_chat_template,
-    standardize_sharegpt,
-    train_on_responses_only,
-)
-
-from datasets import load_dataset
-from trl import SFTConfig, SFTTrainer
-from transformers import DataCollatorForSeq2Seq
 import torch
 
 
@@ -25,7 +11,7 @@ full_finetuning = os.getenv("FULL_FINETUNING", "true").lower() == "true"
 qat_scheme = os.getenv("QAT_SCHEME")
 quantization_scheme = os.getenv("QUANTIZATION_SCHEME")
 save_output_dir = os.getenv("SAVE_OUTPUT_DIR", "/tmp")
-model = os.getenv("MODEL", "Llama3.2-3B")
+model = os.getenv("MODEL", "Llama3.1-8B")
 
 
 # =========================
@@ -58,10 +44,8 @@ else:
     qat_scheme_get_peft_model = qat_scheme
 
 # model
-if model == "Llama3.2-1B":
-    model_name = "unsloth/Llama-3.2-1B-Instruct"
-elif model == "Llama3.2-3B":
-    model_name = "unsloth/Llama-3.2-3B-Instruct"
+if model == "Llama3.1-8B":
+    model_name = "unsloth/Meta-Llama-3.1-8B"
 elif model == "Qwen3-8B":
     model_name = "unsloth/Qwen3-8B"
 else:
@@ -108,20 +92,49 @@ if not full_finetuning:
         qat_scheme = qat_scheme_get_peft_model,
     )
 
+# Pass dummy inputs
+#from transformers import AutoTokenizer
+#model_name = "Qwen/Qwen3-8B"
+#tokenizer = AutoTokenizer.from_pretrained(model_name)
+#dummy_text = "This is a dummy input for the Qwen3 model."
+#inputs = tokenizer(dummy_text, return_tensors="pt").to("cuda")
+#print("Dummy inputs", inputs)
+#
+#print("\n\n\n\n======= Calling model")
+#model(**inputs)
+#print("\n\n\n\n======= Calling model.base_model")
+#model.base_model(**inputs)
 
 # ============
 #  Data prep |
 # ============
 
-tokenizer = get_chat_template(tokenizer, chat_template = "llama-3.1")
+alpaca_prompt = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
 
+### Instruction:
+{}
+
+### Input:
+{}
+
+### Response:
+{}"""
+
+EOS_TOKEN = tokenizer.eos_token # Must add EOS_TOKEN
 def formatting_prompts_func(examples):
-    convos = examples["conversations"]
-    texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False) for convo in convos]
+    instructions = examples["instruction"]
+    inputs       = examples["input"]
+    outputs      = examples["output"]
+    texts = []
+    for instruction, input, output in zip(instructions, inputs, outputs):
+        # Must add EOS_TOKEN, otherwise your generation will go on forever!
+        text = alpaca_prompt.format(instruction, input, output) + EOS_TOKEN
+        texts.append(text)
     return { "text" : texts, }
+pass
 
-dataset = load_dataset("mlabonne/FineTome-100k", split = "train")
-dataset = standardize_sharegpt(dataset)
+from datasets import load_dataset
+dataset = load_dataset("yahma/alpaca-cleaned", split = "train")
 dataset = dataset.map(formatting_prompts_func, batched = True,)
 
 
@@ -129,19 +142,19 @@ dataset = dataset.map(formatting_prompts_func, batched = True,)
 #  Train |
 # ========
 
+from trl import SFTConfig, SFTTrainer
 trainer = SFTTrainer(
     model = model,
     tokenizer = tokenizer,
     train_dataset = dataset,
     dataset_text_field = "text",
     max_seq_length = max_seq_length,
-    data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
-    packing = False,
+    packing = False, # Can make training 5x faster for short sequences.
     args = SFTConfig(
         per_device_train_batch_size = batch_size,
         gradient_accumulation_steps = gradient_accumulation_steps,
         warmup_steps = 5,
-        num_train_epochs = 1,
+        num_train_epochs = 1, # Set this for 1 full training run.
         max_steps = max_steps,
         learning_rate = learning_rate,
         logging_steps = 1,
@@ -150,14 +163,8 @@ trainer = SFTTrainer(
         lr_scheduler_type = "linear",
         seed = 3407,
         output_dir = "outputs",
-        report_to = "none",
+        report_to = "none", # Use this for WandB etc
     ),
-)
-
-trainer = train_on_responses_only(
-    trainer,
-    instruction_part = "<|start_header_id|>user<|end_header_id|>\n\n",
-    response_part = "<|start_header_id|>assistant<|end_header_id|>\n\n",
 )
 
 # Show current memory stats
@@ -187,6 +194,23 @@ print(f"Peak reserved memory for training % of max memory = {lora_percentage} %.
 # =============
 #  Model save |
 # =============
+
+#from torchao.quantization import (
+#    Float8DynamicActivationInt4WeightConfig,
+#    Int8DynamicActivationInt4WeightConfig,
+#)
+#from unsloth.save import patch_saving_functions
+#
+## Save quantized models first
+#save_quantized_output_path = save_output_path + "_quantized"
+#patch_saving_functions(model)
+#if quantization_scheme == "fp8-int4":
+#    torchao_config = Float8DynamicActivationInt4WeightConfig()
+#elif quantization_scheme == "int8-int4":
+#    torchao_config = Int8DynamicActivationInt4WeightConfig(group_size=32)
+#else:
+#    raise ValueError("unknown qat scheme")
+#model.save_pretrained_torchao(save_quantized_output_path, tokenizer, torchao_config)
 
 # Save high precision models
 if full_finetuning:

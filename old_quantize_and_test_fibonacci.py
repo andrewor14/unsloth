@@ -1,12 +1,4 @@
-# =========================================================================================
-#  Inference script based on https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Llama3.2_%281B_and_3B%29-Conversational.ipynb
-# =========================================================================================
-
 import os
-
-from unsloth import FastLanguageModel
-from unsloth.chat_templates import get_chat_template
-
 from transformers import AutoModelForCausalLM, AutoTokenizer, TorchAoConfig, TextStreamer
 from torchao.quantization import (
     Float8DynamicActivationInt4WeightConfig,
@@ -36,11 +28,6 @@ if quantization_scheme is not None:
 else:
     quantization_config = None
 
-
-# ==========================
-#  Load and quantize model |
-# ==========================
-
 print("Running fibonacci on model saved in ", model_dir, "using quantization scheme? ", quantization_scheme)
 
 model = AutoModelForCausalLM.from_pretrained(
@@ -54,33 +41,28 @@ tokenizer = AutoTokenizer.from_pretrained(model_dir)
 print("Model: ", model)
 print("First linear weight: ", model.model.layers[0].self_attn.q_proj.weight)
 
+alpaca_prompt = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
 
-# ============
-#  Inference |
-# ============
+### Instruction:
+{}
 
-tokenizer = get_chat_template(tokenizer, chat_template = "llama-3.1")
+### Input:
+{}
 
-FastLanguageModel.for_inference(model) # Enable native 2x faster inference
+### Response:
+{}"""
 
-messages = [
-    {"role": "user", "content": "Continue the fibonnaci sequence: 1, 1, 2, 3, 5, 8,"},
-]
-inputs = tokenizer.apply_chat_template(
-    messages,
-    tokenize = True,
-    add_generation_prompt = True, # Must add for generation
-    return_tensors = "pt",
-).to("cuda")
+inputs = tokenizer(
+[
+    alpaca_prompt.format(
+        "Continue the fibonnaci sequence.", # instruction
+        "1, 1, 2, 3, 5, 8", # input
+        "", # output - leave this blank for generation!
+    )
+], return_tensors = "pt").to("cuda")
 
-text_streamer = TextStreamer(tokenizer, skip_prompt = True)
-_ = model.generate(input_ids = inputs, streamer = text_streamer, max_new_tokens = 128,
-                   use_cache = True, temperature = 1.5, min_p = 0.1)
-
-
-# =============
-#  Save model |
-# =============
+text_streamer = TextStreamer(tokenizer)
+_ = model.generate(**inputs, streamer = text_streamer, max_new_tokens = 128)
 
 print("Saving model and tokenizer to ", quantized_model_dir)
 

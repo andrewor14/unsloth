@@ -1,6 +1,6 @@
 LOG_DIR="${LOG_DIR:-/home/andrewor/local/logs/unsloth}"
 FULL_FINETUNING="${FULL_FINETUNING:-true}"
-MODEL="${MODEL:-Llama3.1-8B}"
+MODEL="${MODEL:-Llama3.2-3B}"
 
 export QUANTIZATION_SCHEME="${QUANTIZATION_SCHEME:-fp8-int4}"
 
