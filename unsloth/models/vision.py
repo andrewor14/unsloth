@@ -590,6 +590,7 @@ class FastBaseModel:
         loftq_config               = {},
         task_type                  = TaskType.CAUSAL_LM,
         temporary_location         = "_unsloth_temporary_saved_buffers",
+        qat_scheme                 = None,
         **kwargs
     ):
         if os.environ.get("UNSLOTH_ENABLE_FULL_FINETUNING", "0") == "1":
@@ -655,6 +656,14 @@ class FastBaseModel:
             use_gradient_checkpointing = use_gradient_checkpointing,
         )
         model = _get_peft_model(model, lora_config)
+
+        # Apply QAT + LoRA if specified
+        if qat_scheme is not None:
+            print("Unsloth: Applying QAT to mitigate quantization degradation")
+            model = _prepare_model_for_qat(model, qat_scheme)
+        pass
+        print(model)
+
         # Enable gradients on modules which are trainable
         requires_grad_for_gradient_checkpointing(model)
         trust_remote_code = getattr(model, "_unsloth_trust_remote_code", False)

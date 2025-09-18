@@ -1,34 +1,70 @@
-export QUANTIZATION_SCHEME="fp8-int4"
-export MODEL="Qwen3-8B"
+BASE_LOG_DIR="/home/andrewor/local/logs/unsloth"
 
-FULL_FINETUNING=false BATCH_SIZE=16 GRADIENT_ACCUMULATION_STEPS=1 MAX_STEPS=-1 LEARNING_RATE=2e-4 ./super_run_unsloth.sh
-mkdir -p /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs16-lr2e-4-1epoch
-mv /home/andrewor/local/logs/unsloth/unsloth* /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs16-lr2e-4-1epoch
+export QUANTIZATION_SCHEME="int4"
+export FULL_FINETUNING="false"
+export GRADIENT_ACCUMULATION_STEPS=1
 
-FULL_FINETUNING=false BATCH_SIZE=16 GRADIENT_ACCUMULATION_STEPS=1 MAX_STEPS=-1 LEARNING_RATE=1e-4 ./super_run_unsloth.sh
-mkdir -p /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs16-lr1e-4-1epoch
-mv /home/andrewor/local/logs/unsloth/unsloth* /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs16-lr1e-4-1epoch
+export MODEL="Gemma3-12B"
+export BATCH_SIZE=16
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=2e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=2e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=1e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=1e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
 
-FULL_FINETUNING=false BATCH_SIZE=16 GRADIENT_ACCUMULATION_STEPS=1 MAX_STEPS=-1 LEARNING_RATE=4e-5 ./super_run_unsloth.sh
-mkdir -p /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs16-lr4e-5-1epoch
-mv /home/andrewor/local/logs/unsloth/unsloth* /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs16-lr4e-5-1epoch
+export MODEL="Gemma3-4B"
+export BATCH_SIZE=16
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=2e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=2e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=1e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=1e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
 
-FULL_FINETUNING=false BATCH_SIZE=16 GRADIENT_ACCUMULATION_STEPS=1 MAX_STEPS=-1 LEARNING_RATE=2e-5 ./super_run_unsloth.sh
-mkdir -p /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs16-lr2e-5-1epoch
-mv /home/andrewor/local/logs/unsloth/unsloth* /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs16-lr2e-5-1epoch
+export MODEL="Qwen3-4B-Instruct"
+export BATCH_SIZE=16
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=2e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=2e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=1e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=1e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
 
-FULL_FINETUNING=false BATCH_SIZE=8 GRADIENT_ACCUMULATION_STEPS=1 MAX_STEPS=-1 LEARNING_RATE=2e-4 ./super_run_unsloth.sh
-mkdir -p /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs8-lr2e-4-1epoch
-mv /home/andrewor/local/logs/unsloth/unsloth* /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs8-lr2e-4-1epoch
+export MODEL="Llama3.2-3B"
+export BATCH_SIZE=16
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=2e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=2e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=1e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=1e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
 
-FULL_FINETUNING=false BATCH_SIZE=8 GRADIENT_ACCUMULATION_STEPS=1 MAX_STEPS=-1 LEARNING_RATE=1e-4 ./super_run_unsloth.sh
-mkdir -p /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs8-lr1e-4-1epoch
-mv /home/andrewor/local/logs/unsloth/unsloth* /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs8-lr1e-4-1epoch
-
-FULL_FINETUNING=false BATCH_SIZE=8 GRADIENT_ACCUMULATION_STEPS=1 MAX_STEPS=-1 LEARNING_RATE=4e-5 ./super_run_unsloth.sh
-mkdir -p /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs8-lr4e-5-1epoch
-mv /home/andrewor/local/logs/unsloth/unsloth* /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs8-lr4e-5-1epoch
-
-FULL_FINETUNING=false BATCH_SIZE=8 GRADIENT_ACCUMULATION_STEPS=1 MAX_STEPS=-1 LEARNING_RATE=2e-5 ./super_run_unsloth.sh
-mkdir -p /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs8-lr2e-5-1epoch
-mv /home/andrewor/local/logs/unsloth/unsloth* /home/andrewor/local/logs/unsloth/saved-9-16-lora-bs8-lr2e-5-1epoch
+export MODEL="Llama3.2-1B"
+export BATCH_SIZE=16
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=2e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=2e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=1e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=1e-4 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
