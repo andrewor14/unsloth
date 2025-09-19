@@ -30,6 +30,7 @@ from ..kernels import (
 )
 from ._utils import __version__
 from ._utils import *
+from ._utils import _prepare_model_for_qat
 from ..save import patch_saving_functions
 from peft import LoraConfig, TaskType, get_peft_model as _get_peft_model
 from peft import PeftModelForCausalLM
