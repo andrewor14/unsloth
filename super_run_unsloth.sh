@@ -33,8 +33,9 @@ fi
 
 # Eval
 export MODEL_DIR="$OUTPUT_DIR"
-LM_EVAL_TASKS="wikitext,bbh,mmlu_pro,gpqa"
+LM_EVAL_TASKS="wikitext"
+#LM_EVAL_TASKS="wikitext,bbh,mmlu_pro,gpqa" # this takes 24 hours per run!
 env -u QUANTIZATION_SCHEME python quantize_and_test_fibonacci.py > "${OUTPUT_DIR}/fib_eval_float.log" 2>&1
 python quantize_and_test_fibonacci.py > "${OUTPUT_DIR}/fib_eval_quantized.log" 2>&1
-accelerate launch -m lm_eval --model hf --model_args pretrained="${OUTPUT_DIR}" --tasks "$LM_EVAL_TASKS" --batch_size 2 > "${OUTPUT_DIR}/lm_eval_float.log" 2>&1
-accelerate launch -m lm_eval --model hf --model_args pretrained="${OUTPUT_DIR}_quantized2" --tasks "$LM_EVAL_TASKS" --batch_size 2 > "${OUTPUT_DIR}/lm_eval_quantized.log" 2>&1
+accelerate launch -m lm_eval --model hf --model_args pretrained="${OUTPUT_DIR}" --tasks "$LM_EVAL_TASKS" --batch_size auto > "${OUTPUT_DIR}/lm_eval_float.log" 2>&1
+accelerate launch -m lm_eval --model hf --model_args pretrained="${OUTPUT_DIR}_quantized2" --tasks "$LM_EVAL_TASKS" --batch_size auto > "${OUTPUT_DIR}/lm_eval_quantized.log" 2>&1
