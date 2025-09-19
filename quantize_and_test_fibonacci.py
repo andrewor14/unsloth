@@ -71,7 +71,15 @@ model = AutoModelForCausalLM.from_pretrained(
 tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
 print("Model: ", model)
-print("First linear weight: ", model.model.layers[0].self_attn.q_proj.weight)
+if "llama" in chat_template or "qwen" in chat_template:
+    print("First linear weight: ", model.model.layers[0].self_attn.q_proj.weight)
+elif "gemma" in chat_template:
+    print("First linear weight: ", model.model.language_model.layers[0].self_attn.q_proj.weight)
+
+print("Saving model and tokenizer to ", quantized_model_dir)
+
+model.save_pretrained(quantized_model_dir, safe_serialization=False)
+tokenizer.save_pretrained(quantized_model_dir)
 
 
 # ============
@@ -111,6 +119,7 @@ elif "qwen3" in chat_template:
 elif chat_template == "gemma3":
     text = tokenizer.apply_chat_template(
         messages,
+        tokenize = False,
         add_generation_prompt = True, # Must add for generation
     )
     _ = model.generate(
@@ -122,13 +131,3 @@ elif chat_template == "gemma3":
     )
 else:
     raise ValueError(f"Unknown chat template {chat_template}")
-
-
-# =============
-#  Save model |
-# =============
-
-print("Saving model and tokenizer to ", quantized_model_dir)
-
-model.save_pretrained(quantized_model_dir, safe_serialization=False)
-tokenizer.save_pretrained(quantized_model_dir)
