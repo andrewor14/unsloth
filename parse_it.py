@@ -24,13 +24,17 @@ def extract_wikitext_perplexity(log_file: str) -> float:
 for log_dir in log_dirs:
     # extract eval data
     all_data = {}
-    for experiment_name in [QAT_NAME, BASELINE_NAME]:
-        experiment_dir = os.path.join(log_dir, experiment_name)
-        all_data[experiment_name] = {}
-        float_eval_file = os.path.join(experiment_dir, "lm_eval_float.log")
-        quantized_eval_file = os.path.join(experiment_dir, "lm_eval_quantized.log")
-        all_data[experiment_name]["wikitext_word_perplexity_float"] = extract_wikitext_perplexity(float_eval_file)
-        all_data[experiment_name]["wikitext_word_perplexity_quantized"] = extract_wikitext_perplexity(quantized_eval_file)
+    try:
+        for experiment_name in [QAT_NAME, BASELINE_NAME]:
+            experiment_dir = os.path.join(log_dir, experiment_name)
+            all_data[experiment_name] = {}
+            float_eval_file = os.path.join(experiment_dir, "lm_eval_float.log")
+            quantized_eval_file = os.path.join(experiment_dir, "lm_eval_quantized.log")
+            all_data[experiment_name]["wikitext_word_perplexity_float"] = extract_wikitext_perplexity(float_eval_file)
+            all_data[experiment_name]["wikitext_word_perplexity_quantized"] = extract_wikitext_perplexity(quantized_eval_file)
+    except FileNotFoundError:
+        print(f"Skipping log directory {log_dir}")
+        continue
     
     # print data in a nice format
     metric = "wikitext_word_perplexity"
