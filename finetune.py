@@ -162,75 +162,76 @@ else:
 #  Train |
 # ========
 
-trainer = SFTTrainer(
-    model = model,
-    tokenizer = tokenizer,
-    train_dataset = dataset,
-    dataset_text_field = "text",
-    max_seq_length = max_seq_length,
-    data_collator = data_collator,
-    packing = False,
-    args = SFTConfig(
-        per_device_train_batch_size = batch_size,
-        gradient_accumulation_steps = gradient_accumulation_steps,
-        warmup_steps = 5,
-        num_train_epochs = 1,
-        max_steps = max_steps,
-        learning_rate = learning_rate,
-        logging_steps = 1,
-        optim = "adamw_8bit",
-        weight_decay = 0.01,
-        lr_scheduler_type = "linear",
-        seed = 3407,
-        output_dir = "outputs",
-        report_to = "none",
-    ),
-)
+if max_steps != 0:
+    trainer = SFTTrainer(
+        model = model,
+        tokenizer = tokenizer,
+        train_dataset = dataset,
+        dataset_text_field = "text",
+        max_seq_length = max_seq_length,
+        data_collator = data_collator,
+        packing = False,
+        args = SFTConfig(
+            per_device_train_batch_size = batch_size,
+            gradient_accumulation_steps = gradient_accumulation_steps,
+            warmup_steps = 5,
+            num_train_epochs = 1,
+            max_steps = max_steps,
+            learning_rate = learning_rate,
+            logging_steps = 1,
+            optim = "adamw_8bit",
+            weight_decay = 0.01,
+            lr_scheduler_type = "linear",
+            seed = 3407,
+            output_dir = "outputs",
+            report_to = "none",
+        ),
+    )
 
-if my_dataset == "mlabonne/FineTome-100k":
-    if "llama" in chat_template:
-        trainer = train_on_responses_only(
-            trainer,
-            instruction_part = "<|start_header_id|>user<|end_header_id|>\n\n",
-            response_part = "<|start_header_id|>assistant<|end_header_id|>\n\n",
-        )
-    elif "qwen3" in chat_template:
-        trainer = train_on_responses_only(
-            trainer,
-            instruction_part = "<|im_start|>user\n",
-            response_part = "<|im_start|>assistant\n",
-        )
-    elif chat_template == "gemma3":
-        trainer = train_on_responses_only(
-            trainer,
-            instruction_part = "<start_of_turn>user\n",
-            response_part = "<start_of_turn>model\n",
-        )
-    else:
-        raise ValueError(f"Unknown chat template {chat_template}")
+    if my_dataset == "mlabonne/FineTome-100k":
+        if "llama" in chat_template:
+            trainer = train_on_responses_only(
+                trainer,
+                instruction_part = "<|start_header_id|>user<|end_header_id|>\n\n",
+                response_part = "<|start_header_id|>assistant<|end_header_id|>\n\n",
+            )
+        elif "qwen3" in chat_template:
+            trainer = train_on_responses_only(
+                trainer,
+                instruction_part = "<|im_start|>user\n",
+                response_part = "<|im_start|>assistant\n",
+            )
+        elif chat_template == "gemma3":
+            trainer = train_on_responses_only(
+                trainer,
+                instruction_part = "<start_of_turn>user\n",
+                response_part = "<start_of_turn>model\n",
+            )
+        else:
+            raise ValueError(f"Unknown chat template {chat_template}")
 
-# Show current memory stats
-gpu_stats = torch.cuda.get_device_properties(0)
-start_gpu_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
-max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
-print(f"GPU = {gpu_stats.name}. Max memory = {max_memory} GB.")
-print(f"{start_gpu_memory} GB of memory reserved.")
+    # Show current memory stats
+    gpu_stats = torch.cuda.get_device_properties(0)
+    start_gpu_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
+    max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
+    print(f"GPU = {gpu_stats.name}. Max memory = {max_memory} GB.")
+    print(f"{start_gpu_memory} GB of memory reserved.")
 
-trainer_stats = trainer.train()
+    trainer_stats = trainer.train()
 
-# Show final memory and time stats
-used_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
-used_memory_for_lora = round(used_memory - start_gpu_memory, 3)
-used_percentage = round(used_memory / max_memory * 100, 3)
-lora_percentage = round(used_memory_for_lora / max_memory * 100, 3)
-print(f"{trainer_stats.metrics['train_runtime']} seconds used for training.")
-print(
-    f"{round(trainer_stats.metrics['train_runtime']/60, 2)} minutes used for training."
-)
-print(f"Peak reserved memory = {used_memory} GB.")
-print(f"Peak reserved memory for training = {used_memory_for_lora} GB.")
-print(f"Peak reserved memory % of max memory = {used_percentage} %.")
-print(f"Peak reserved memory for training % of max memory = {lora_percentage} %.")
+    # Show final memory and time stats
+    used_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
+    used_memory_for_lora = round(used_memory - start_gpu_memory, 3)
+    used_percentage = round(used_memory / max_memory * 100, 3)
+    lora_percentage = round(used_memory_for_lora / max_memory * 100, 3)
+    print(f"{trainer_stats.metrics['train_runtime']} seconds used for training.")
+    print(
+        f"{round(trainer_stats.metrics['train_runtime']/60, 2)} minutes used for training."
+    )
+    print(f"Peak reserved memory = {used_memory} GB.")
+    print(f"Peak reserved memory for training = {used_memory_for_lora} GB.")
+    print(f"Peak reserved memory % of max memory = {used_percentage} %.")
+    print(f"Peak reserved memory for training % of max memory = {lora_percentage} %.")
 
 
 # =============
