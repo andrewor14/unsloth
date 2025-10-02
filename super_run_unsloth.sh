@@ -2,7 +2,7 @@ BASE_LOG_DIR="${BASE_LOG_DIR:-/home/andrewor/local/logs/unsloth}"
 ENABLE_QAT="${ENABLE_QAT:-true}"
 export FULL_FINETUNING="${FULL_FINETUNING:-true}"
 export MODEL="${MODEL:-Llama3.2-3B}"
-export QUANTIZATION_SCHEME="${QUANTIZATION_SCHEME:-fp8-int4}"
+export QUANTIZATION_SCHEME="${QUANTIZATION_SCHEME:-int4}"
 
 # Set up LOG_DIR
 if [[ "$FULL_FINETUNING" == "true" ]]; then
@@ -33,7 +33,7 @@ fi
 
 # Eval
 export MODEL_DIR="$OUTPUT_DIR"
-LM_EVAL_TASKS="wikitext"
+LM_EVAL_TASKS="wikitext,mmlu"
 #LM_EVAL_TASKS="wikitext,bbh,mmlu_pro,gpqa" # this takes 24 hours per run!
 env -u QUANTIZATION_SCHEME python quantize_and_test_fibonacci.py > "${OUTPUT_DIR}/fib_eval_float.log" 2>&1
 python quantize_and_test_fibonacci.py > "${OUTPUT_DIR}/fib_eval_quantized.log" 2>&1

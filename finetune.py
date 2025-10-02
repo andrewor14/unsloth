@@ -18,6 +18,7 @@ from transformers import DataCollatorForSeq2Seq
 import torch
 
 
+my_dataset = os.getenv("DATASET", "mlabonne/FineTome-100k")
 batch_size = int(os.getenv("BATCH_SIZE", 2))
 learning_rate = float(os.getenv("LEARNING_RATE", 2e-5))
 gradient_accumulation_steps = int(os.getenv("GRADIENT_ACCUMULATION_STEPS", 4))
@@ -115,29 +116,46 @@ if not full_finetuning:
 #  Data prep |
 # ============
 
-tokenizer = get_chat_template(tokenizer, chat_template = chat_template)
+data_collator = None
 
-if chat_template == "gemma3":
-    def formatting_prompts_func(examples):
-        convos = examples["conversations"]
-        texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False).removeprefix('<bos>') for convo in convos]
-        return { "text" : texts, }
+if my_dataset == "cais/mmlu":
+    def formatting_prompts_func(example):
+        choices = ["A", "B", "C", "D"]
+        correct_choice = choices[example["answer"]]
+        prompt = f"Question: {example['question']}\n"
+        prompt += "\n"
+        prompt += "Choices:\n"
+        prompt += f"A. {example['choices'][0]}\n"
+        prompt += f"B. {example['choices'][1]}\n"
+        prompt += f"C. {example['choices'][2]}\n"
+        prompt += f"D. {example['choices'][3]}\n"
+        prompt += "\n"
+        prompt += f"Answer: {correct_choice}"
+        return {"text": prompt}
+    dataset = load_dataset("cais/mmlu", "all", split="auxiliary_train")
+    dataset = dataset.map(formatting_prompts_func)
+elif my_dataset == "mlabonne/FineTome-100k":
+    tokenizer = get_chat_template(tokenizer, chat_template = chat_template)
+    if chat_template == "gemma3":
+        def formatting_prompts_func(examples):
+            convos = examples["conversations"]
+            texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False).removeprefix('<bos>') for convo in convos]
+            return { "text" : texts, }
+    else:
+        def formatting_prompts_func(examples):
+            convos = examples["conversations"]
+            texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False) for convo in convos]
+            return { "text" : texts, }
+    dataset = load_dataset("mlabonne/FineTome-100k", split = "train")
+    if "llama" in chat_template:
+        dataset = standardize_sharegpt(dataset)
+        data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
+    else:
+        dataset = standardize_data_formats(dataset)
+        data_collator = None
+    dataset = dataset.map(formatting_prompts_func, batched = True,)
 else:
-    def formatting_prompts_func(examples):
-        convos = examples["conversations"]
-        texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False) for convo in convos]
-        return { "text" : texts, }
-
-dataset = load_dataset("mlabonne/FineTome-100k", split = "train")
-
-if "llama" in chat_template:
-    dataset = standardize_sharegpt(dataset)
-    data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
-else:
-    dataset = standardize_data_formats(dataset)
-    data_collator = None
-
-dataset = dataset.map(formatting_prompts_func, batched = True,)
+    raise ValueError(f"Unknown dataset {my_dataset}")
 
 
 # ========
@@ -169,26 +187,27 @@ trainer = SFTTrainer(
     ),
 )
 
-if "llama" in chat_template:
-    trainer = train_on_responses_only(
-        trainer,
-        instruction_part = "<|start_header_id|>user<|end_header_id|>\n\n",
-        response_part = "<|start_header_id|>assistant<|end_header_id|>\n\n",
-    )
-elif "qwen3" in chat_template:
-    trainer = train_on_responses_only(
-        trainer,
-        instruction_part = "<|im_start|>user\n",
-        response_part = "<|im_start|>assistant\n",
-    )
-elif chat_template == "gemma3":
-    trainer = train_on_responses_only(
-        trainer,
-        instruction_part = "<start_of_turn>user\n",
-        response_part = "<start_of_turn>model\n",
-    )
-else:
-    raise ValueError(f"Unknown chat template {chat_template}")
+if my_dataset == "mlabonne/FineTome-100k":
+    if "llama" in chat_template:
+        trainer = train_on_responses_only(
+            trainer,
+            instruction_part = "<|start_header_id|>user<|end_header_id|>\n\n",
+            response_part = "<|start_header_id|>assistant<|end_header_id|>\n\n",
+        )
+    elif "qwen3" in chat_template:
+        trainer = train_on_responses_only(
+            trainer,
+            instruction_part = "<|im_start|>user\n",
+            response_part = "<|im_start|>assistant\n",
+        )
+    elif chat_template == "gemma3":
+        trainer = train_on_responses_only(
+            trainer,
+            instruction_part = "<start_of_turn>user\n",
+            response_part = "<start_of_turn>model\n",
+        )
+    else:
+        raise ValueError(f"Unknown chat template {chat_template}")
 
 # Show current memory stats
 gpu_stats = torch.cuda.get_device_properties(0)
