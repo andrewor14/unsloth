@@ -21,9 +21,9 @@ import torch
 my_dataset = os.getenv("DATASET", "mlabonne/FineTome-100k")
 batch_size = int(os.getenv("BATCH_SIZE", 2))
 learning_rate = float(os.getenv("LEARNING_RATE", 2e-5))
-gradient_accumulation_steps = int(os.getenv("GRADIENT_ACCUMULATION_STEPS", 4))
+gradient_accumulation_steps = int(os.getenv("GRADIENT_ACCUMULATION_STEPS", 1))
 max_steps = int(os.getenv("MAX_STEPS", 60))
-full_finetuning = os.getenv("FULL_FINETUNING", "true").lower() == "true"
+full_finetuning = os.getenv("FULL_FINETUNING", "false").lower() == "true"
 qat_scheme = os.getenv("QAT_SCHEME")
 quantization_scheme = os.getenv("QUANTIZATION_SCHEME")
 output_dir = os.getenv("OUTPUT_DIR", "/tmp")
@@ -35,7 +35,7 @@ model = os.getenv("MODEL", "Llama3.2-3B")
 # =========================
 
 if quantization_scheme is None:
-    quantization_scheme = qat_scheme if qat_scheme is not None else "fp8-int4"
+    quantization_scheme = qat_scheme if qat_scheme is not None else "int4"
 if qat_scheme is not None:
     assert qat_scheme == quantization_scheme
 
@@ -76,6 +76,7 @@ print("qat_scheme_get_peft_model = ", qat_scheme_get_peft_model)
 print("model_name = ", model_name)
 print("chat_template = ", chat_template)
 print("output_dir = ", output_dir)
+print("dataset = ", my_dataset)
 
 
 # ==============
@@ -134,7 +135,7 @@ if my_dataset == "cais/mmlu":
         return {"text": prompt}
     dataset = load_dataset("cais/mmlu", "all", split="auxiliary_train")
     dataset = dataset.map(formatting_prompts_func)
-elif my_dataset == "mlabonne/FineTome-100k" or "Open-Orca/SlimOrca":
+elif my_dataset in ["mlabonne/FineTome-100k", "Open-Orca/SlimOrca", "garage-bAInd/Open-Platypus"]:
     tokenizer = get_chat_template(tokenizer, chat_template = chat_template)
     if chat_template == "gemma3":
         def formatting_prompts_func(examples):
@@ -147,7 +148,7 @@ elif my_dataset == "mlabonne/FineTome-100k" or "Open-Orca/SlimOrca":
             texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False) for convo in convos]
             return { "text" : texts, }
     dataset = load_dataset(my_dataset, split = "train")
-    # drop the "weights" attribute, which are not strings
+    # Format SlimOrca by dropping the "weights" attribute, which are not strings
     # unsloth_zoo will error otherwise
     if my_dataset == "Open-Orca/SlimOrca":
         def drop_weights_func(example):
@@ -159,6 +160,15 @@ elif my_dataset == "mlabonne/FineTome-100k" or "Open-Orca/SlimOrca":
         dataset = dataset.map(drop_weights_func)
         dataset = dataset.remove_columns("conversations")
         dataset = dataset.rename_column("new_conversations", "conversations")
+    # Format Open-Platypus from "instruction" and "output" into a conversation
+    elif my_dataset == "garage-bAInd/Open-Platypus":
+        def format_into_conversation(example):
+            return {"conversations": [
+                {"from": "human", "value": example["instruction"]},
+                {"from": "gpt", "value": example["output"]},
+            ]}
+        dataset = dataset.map(format_into_conversation)
+        dataset = dataset.remove_columns(["input", "output", "instruction", "data_source"])
     if "llama" in chat_template:
         dataset = standardize_sharegpt(dataset)
         data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
@@ -200,7 +210,7 @@ if max_steps != 0:
         ),
     )
 
-    if my_dataset == "mlabonne/FineTome-100k" or "Open-Orca/SlimOrca":
+    if my_dataset != "cais/mmlu":
         if "llama" in chat_template:
             trainer = train_on_responses_only(
                 trainer,

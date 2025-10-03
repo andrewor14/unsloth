@@ -3,13 +3,13 @@ BASE_LOG_DIR="/home/andrewor/local/logs/unsloth"
 export QUANTIZATION_SCHEME="int4"
 export FULL_FINETUNING="false"
 export GRADIENT_ACCUMULATION_STEPS=1
-export MAX_STEPS=1000
-export DATASET="Open-Orca/SlimOrca"
+export MAX_STEPS=-1
+export DATASET="garage-bAInd/Open-Platypus"
 
 # No fine-tune baseline, just evals
 #CUDA_VISIBLE_DEVICES=0 MAX_STEPS=0 RUN_TAG="no_finetuning" MODEL="Gemma3-12B" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=1 MAX_STEPS=0 RUN_TAG="no_finetuning" MODEL="Qwen3-8B" ./super_run_unsloth.sh &
-wait
+#CUDA_VISIBLE_DEVICES=1 MAX_STEPS=0 RUN_TAG="no_finetuning" MODEL="Qwen3-8B" ./super_run_unsloth.sh &
+#wait
 
 export MODEL="Gemma3-12B"
 export BATCH_SIZE=16
