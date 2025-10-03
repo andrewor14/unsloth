@@ -134,7 +134,7 @@ if my_dataset == "cais/mmlu":
         return {"text": prompt}
     dataset = load_dataset("cais/mmlu", "all", split="auxiliary_train")
     dataset = dataset.map(formatting_prompts_func)
-elif my_dataset == "mlabonne/FineTome-100k":
+elif my_dataset == "mlabonne/FineTome-100k" or "Open-Orca/SlimOrca":
     tokenizer = get_chat_template(tokenizer, chat_template = chat_template)
     if chat_template == "gemma3":
         def formatting_prompts_func(examples):
@@ -146,7 +146,19 @@ elif my_dataset == "mlabonne/FineTome-100k":
             convos = examples["conversations"]
             texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False) for convo in convos]
             return { "text" : texts, }
-    dataset = load_dataset("mlabonne/FineTome-100k", split = "train")
+    dataset = load_dataset(my_dataset, split = "train")
+    # drop the "weights" attribute, which are not strings
+    # unsloth_zoo will error otherwise
+    if my_dataset == "Open-Orca/SlimOrca":
+        def drop_weights_func(example):
+            example["new_conversations"] = []
+            for _dict in example["conversations"]:
+                del _dict["weight"]
+                example["new_conversations"].append(_dict)
+            return example
+        dataset = dataset.map(drop_weights_func)
+        dataset = dataset.remove_columns("conversations")
+        dataset = dataset.rename_column("new_conversations", "conversations")
     if "llama" in chat_template:
         dataset = standardize_sharegpt(dataset)
         data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
@@ -188,7 +200,7 @@ if max_steps != 0:
         ),
     )
 
-    if my_dataset == "mlabonne/FineTome-100k":
+    if my_dataset == "mlabonne/FineTome-100k" or "Open-Orca/SlimOrca":
         if "llama" in chat_template:
             trainer = train_on_responses_only(
                 trainer,

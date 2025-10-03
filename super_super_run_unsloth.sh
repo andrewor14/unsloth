@@ -3,12 +3,12 @@ BASE_LOG_DIR="/home/andrewor/local/logs/unsloth"
 export QUANTIZATION_SCHEME="int4"
 export FULL_FINETUNING="false"
 export GRADIENT_ACCUMULATION_STEPS=1
-export MAX_STEPS=-1
-export DATASET="cais/mmlu"
+export MAX_STEPS=1000
+export DATASET="Open-Orca/SlimOrca"
 
 # No fine-tune baseline, just evals
-CUDA_VISIBLE_DEVICES=0 MAX_STEPS=0 RUN_TAG="no_finetuning" MODEL="Gemma3-12B" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=1 MAX_STEPS=0 RUN_TAG="no_finetuning" MODEL="Gemma3-4B" ./super_run_unsloth.sh &
+#CUDA_VISIBLE_DEVICES=0 MAX_STEPS=0 RUN_TAG="no_finetuning" MODEL="Gemma3-12B" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 MAX_STEPS=0 RUN_TAG="no_finetuning" MODEL="Qwen3-8B" ./super_run_unsloth.sh &
 wait
 
 export MODEL="Gemma3-12B"
@@ -19,8 +19,8 @@ CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QA
 CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
 wait
 
-export MODEL="Gemma3-4B"
-export BATCH_SIZE=32
+export MODEL="Qwen3-8B"
+export BATCH_SIZE=16
 CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
 CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
 CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &

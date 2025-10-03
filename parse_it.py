@@ -50,11 +50,21 @@ def extract_mmlu_pro_accuracy(log_file: str) -> float:
                 return float(m.groups()[0])
     return -1
 
+def extract_mmlu_accuracy(log_file: str) -> float:
+    # |mmlu|      2|custom-extract|      |exact_match|↑  |0.4120|±  |0.0044|
+    with open(log_file, "r") as f:
+        for l in f.readlines():
+            m = re.match("\|mmlu.*\|([\\d. ]*)\|±.*", l)
+            if m is not None:
+                return float(m.groups()[0])
+    return -1
+
 task_to_parse_fn = {
     "wikitext": extract_wikitext_perplexity,
-    "bbh": extract_bbh_accuracy,
-    "gpqa": extract_gpqa_accuracy,
-    "mmlu_pro": extract_mmlu_pro_accuracy,
+    #"bbh": extract_bbh_accuracy,
+    #"gpqa": extract_gpqa_accuracy,
+    #"mmlu_pro": extract_mmlu_pro_accuracy,
+    "mmlu": extract_mmlu_accuracy,
 }
 
 for log_dir in log_dirs:
@@ -64,8 +74,8 @@ for log_dir in log_dirs:
         for experiment_name in [QAT_NAME, BASELINE_NAME]:
             experiment_dir = os.path.join(log_dir, experiment_name)
             all_data[experiment_name] = {}
-            float_eval_file = os.path.join(experiment_dir, "new_lm_eval_float.log")
-            quantized_eval_file = os.path.join(experiment_dir, "new_lm_eval_quantized.log")
+            float_eval_file = os.path.join(experiment_dir, "lm_eval_float.log")
+            quantized_eval_file = os.path.join(experiment_dir, "lm_eval_quantized.log")
             for task, parse_fn in task_to_parse_fn.items():
                 if experiment_name != QAT_NAME:
                     all_data[experiment_name][f"{task}_float"] = parse_fn(float_eval_file)
