@@ -4,7 +4,7 @@
 
 import os
 
-from unsloth import FastLanguageModel
+from unsloth import FastLanguageModel, FastModel
 from unsloth.chat_templates import (
     get_chat_template,
     standardize_data_formats,
@@ -87,30 +87,57 @@ max_seq_length = 2048
 dtype = torch.bfloat16
 load_in_4bit = False
 
-model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name = model_name,
-    max_seq_length = max_seq_length,
-    dtype = dtype,
-    load_in_4bit = load_in_4bit,
-    full_finetuning = full_finetuning,
-    qat_scheme = qat_scheme_from_pretrained,
-)
+if chat_template == "gemma3":
+    model, tokenizer = FastModel.from_pretrained(
+        model_name = model_name,
+        max_seq_length = max_seq_length,
+        dtype = dtype,
+        load_in_4bit = load_in_4bit,
+        full_finetuning = full_finetuning,
+        qat_scheme = qat_scheme_from_pretrained,
+    )
+else:
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name = model_name,
+        max_seq_length = max_seq_length,
+        dtype = dtype,
+        load_in_4bit = load_in_4bit,
+        full_finetuning = full_finetuning,
+        qat_scheme = qat_scheme_from_pretrained,
+    )
 
 if not full_finetuning:
-    model = FastLanguageModel.get_peft_model(
-        model,
-        r = 16,
-        target_modules = ["q_proj", "k_proj", "v_proj", "o_proj",
-                          "gate_proj", "up_proj", "down_proj",],
-        lora_alpha = 16,
-        lora_dropout = 0,
-        bias = "none",
-        use_gradient_checkpointing = "unsloth",
-        random_state = 3407,
-        use_rslora = False,
-        loftq_config = None,
-        qat_scheme = qat_scheme_get_peft_model,
-    )
+    if chat_template == "gemma3":
+        # Taken from https://github.com/unslothai/notebooks/blob/c71d946696b0b69c191c4574d7ca1f99f077d2dc/nb/Gemma3_(4B).ipynb
+        model = FastModel.get_peft_model(
+            model,
+            finetune_vision_layers     = False, # Turn off for just text!
+            finetune_language_layers   = True,  # Should leave on!
+            finetune_attention_modules = True,  # Attention good for GRPO
+            finetune_mlp_modules       = True,  # SHould leave on always!
+            r = 8,           # Larger = higher accuracy, but might overfit
+            lora_alpha = 8,  # Recommended alpha == r at least
+            lora_dropout = 0,
+            bias = "none",
+            random_state = 3407,
+            qat_scheme = qat_scheme_get_peft_model,
+        )
+    else:
+        # Taken from https://github.com/unslothai/notebooks/blob/c71d946696b0b69c191c4574d7ca1f99f077d2dc/nb/Kaggle-Llama3.2_(1B_and_3B)-Conversational.ipynb
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r = 16,
+            target_modules = ["q_proj", "k_proj", "v_proj", "o_proj",
+                              "gate_proj", "up_proj", "down_proj",],
+            lora_alpha = 16,
+            lora_dropout = 0,
+            bias = "none",
+            use_gradient_checkpointing = "unsloth",
+            random_state = 3407,
+            use_rslora = False,
+            loftq_config = None,
+            qat_scheme = qat_scheme_get_peft_model,
+        )
 
 
 # ============
