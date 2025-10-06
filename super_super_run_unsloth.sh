@@ -11,38 +11,70 @@ export DATASET="mlabonne/FineTome-100k"
 #CUDA_VISIBLE_DEVICES=1 MAX_STEPS=0 RUN_TAG="no_finetuning" MODEL="Qwen3-8B" ./super_run_unsloth.sh &
 #wait
 
+# cais/mmlu
+
+export MODEL="Gemma3-12B"
+export BATCH_SIZE=16
+export MAX_STEPS=100
+export DATASET="cais/mmlu"
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
+
 export MODEL="Qwen3-8B"
 export BATCH_SIZE=16
-CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=4e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=2e-5 RUN_TAG="lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+export MAX_STEPS=100
+export DATASET="cais/mmlu"
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
 wait
+
+
+# SlimOrca
 
 export MODEL="Gemma3-12B"
 export BATCH_SIZE=16
-CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=4e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=4e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=2e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=2e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
-wait
-
-# Re-run Gemma3-12B with different datasets
-
-export MODEL="Gemma3-12B"
-export BATCH_SIZE=16
-export DATASET="garage-bAInd/Open-Platypus"
-CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=4e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=4e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=2e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=2e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
-wait
-
-export MODEL="Gemma3-12B"
-export BATCH_SIZE=16
+export MAX_STEPS=500
 export DATASET="Open-Orca/SlimOrca"
-CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=4e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=4e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=2e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
-CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=2e-5 RUN_TAG="${DATASET}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
+
+export MODEL="Qwen3-8B"
+export BATCH_SIZE=16
+export MAX_STEPS=500
+export DATASET="Open-Orca/SlimOrca"
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
+
+
+# Open-Platypus
+
+export MODEL="Gemma3-12B"
+export BATCH_SIZE=16
+export MAX_STEPS=500
+export DATASET="garage-bAInd/Open-Platypus"
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+wait
+
+export MODEL="Qwen3-8B"
+export BATCH_SIZE=16
+export MAX_STEPS=500
+export DATASET="garage-bAInd/Open-Platypus"
+CUDA_VISIBLE_DEVICES=0 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=1 LEARNING_RATE=2e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=2 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="true" ./super_run_unsloth.sh &
+CUDA_VISIBLE_DEVICES=3 LEARNING_RATE=1e-4 RUN_TAG="${DATASET/\//-}-lr${LEARNING_RATE}" ENABLE_QAT="false" ./super_run_unsloth.sh &
 wait

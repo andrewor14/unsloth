@@ -19,7 +19,7 @@ import torch
 
 
 my_dataset = os.getenv("DATASET", "mlabonne/FineTome-100k")
-batch_size = int(os.getenv("BATCH_SIZE", 2))
+batch_size = int(os.getenv("BATCH_SIZE", 8))
 learning_rate = float(os.getenv("LEARNING_RATE", 2e-5))
 gradient_accumulation_steps = int(os.getenv("GRADIENT_ACCUMULATION_STEPS", 1))
 max_steps = int(os.getenv("MAX_STEPS", 60))
@@ -144,67 +144,79 @@ if not full_finetuning:
 #  Data prep |
 # ============
 
-data_collator = None
-
-if my_dataset == "cais/mmlu":
-    def formatting_prompts_func(example):
+# Format SlimOrca by dropping the "weights" attribute, which are not strings
+# unsloth_zoo will error otherwise
+if my_dataset == "Open-Orca/SlimOrca":
+    def drop_weights_func(example):
+        example["new_conversations"] = []
+        for _dict in example["conversations"]:
+            del _dict["weight"]
+            example["new_conversations"].append(_dict)
+        return example
+    dataset = load_dataset(my_dataset, split = "train")
+    dataset = dataset.map(drop_weights_func)
+    dataset = dataset.remove_columns("conversations")
+    dataset = dataset.rename_column("new_conversations", "conversations")
+# Format Open-Platypus from "instruction" and "output" into a conversation
+elif my_dataset == "garage-bAInd/Open-Platypus":
+    def format_into_conversation(example):
+        return {"conversations": [
+            {"from": "human", "value": example["instruction"]},
+            {"from": "gpt", "value": example["output"]},
+        ]}
+    dataset = load_dataset(my_dataset, split = "train")
+    dataset = dataset.map(format_into_conversation)
+    dataset = dataset.remove_columns(["input", "output", "instruction", "data_source"])
+# Format mmlu from "question", "choices", and "answer" into a conversation
+elif my_dataset == "cais/mmlu":
+    def format_into_conversation(example):
         choices = ["A", "B", "C", "D"]
         correct_choice = choices[example["answer"]]
-        prompt = f"Question: {example['question']}\n"
-        prompt += "\n"
-        prompt += "Choices:\n"
-        prompt += f"A. {example['choices'][0]}\n"
-        prompt += f"B. {example['choices'][1]}\n"
-        prompt += f"C. {example['choices'][2]}\n"
-        prompt += f"D. {example['choices'][3]}\n"
-        prompt += "\n"
-        prompt += f"Answer: {correct_choice}"
-        return {"text": prompt}
+        question = "Choose the correct answer for the following question: "
+        question += f"{example['question']}\n\n"
+        question += "Choices:\n"
+        question += f"A. {example['choices'][0]}\n"
+        question += f"B. {example['choices'][1]}\n"
+        question += f"C. {example['choices'][2]}\n"
+        question += f"D. {example['choices'][3]}"
+        answer = f"The correct answer is {correct_choice}."
+        return {"conversations": [
+            {"from": "human", "value": question},
+            {"from": "gpt", "value": answer},
+        ]}
     dataset = load_dataset("cais/mmlu", "all", split="auxiliary_train")
-    dataset = dataset.map(formatting_prompts_func)
-elif my_dataset in ["mlabonne/FineTome-100k", "Open-Orca/SlimOrca", "garage-bAInd/Open-Platypus"]:
-    tokenizer = get_chat_template(tokenizer, chat_template = chat_template)
-    if chat_template == "gemma3":
-        def formatting_prompts_func(examples):
-            convos = examples["conversations"]
-            texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False).removeprefix('<bos>') for convo in convos]
-            return { "text" : texts, }
-    else:
-        def formatting_prompts_func(examples):
-            convos = examples["conversations"]
-            texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False) for convo in convos]
-            return { "text" : texts, }
+    dataset = dataset.map(format_into_conversation)
+    dataset = dataset.remove_columns(["question", "subject", "choices", "answer"])
+# Just leave FineTome-100k as is, it's already in a conversation format
+elif my_dataset == "mlabonne/FineTome-100k":
     dataset = load_dataset(my_dataset, split = "train")
-    # Format SlimOrca by dropping the "weights" attribute, which are not strings
-    # unsloth_zoo will error otherwise
-    if my_dataset == "Open-Orca/SlimOrca":
-        def drop_weights_func(example):
-            example["new_conversations"] = []
-            for _dict in example["conversations"]:
-                del _dict["weight"]
-                example["new_conversations"].append(_dict)
-            return example
-        dataset = dataset.map(drop_weights_func)
-        dataset = dataset.remove_columns("conversations")
-        dataset = dataset.rename_column("new_conversations", "conversations")
-    # Format Open-Platypus from "instruction" and "output" into a conversation
-    elif my_dataset == "garage-bAInd/Open-Platypus":
-        def format_into_conversation(example):
-            return {"conversations": [
-                {"from": "human", "value": example["instruction"]},
-                {"from": "gpt", "value": example["output"]},
-            ]}
-        dataset = dataset.map(format_into_conversation)
-        dataset = dataset.remove_columns(["input", "output", "instruction", "data_source"])
-    if "llama" in chat_template:
-        dataset = standardize_sharegpt(dataset)
-        data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
-    else:
-        dataset = standardize_data_formats(dataset)
-        data_collator = None
-    dataset = dataset.map(formatting_prompts_func, batched = True,)
 else:
     raise ValueError(f"Unknown dataset {my_dataset}")
+
+# Standardize dataset format
+data_collator = None
+tokenizer = get_chat_template(tokenizer, chat_template = chat_template)
+if "llama" in chat_template:
+    dataset = standardize_sharegpt(dataset)
+    data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
+else:
+    dataset = standardize_data_formats(dataset)
+
+# Format conversation into text prompt using the correct chat template based on the model
+if chat_template == "gemma3":
+    def formatting_prompts_func(examples):
+        convos = examples["conversations"]
+        texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False).removeprefix('<bos>') for convo in convos]
+        return { "text" : texts, }
+else:
+    def formatting_prompts_func(examples):
+        convos = examples["conversations"]
+        texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False) for convo in convos]
+        return { "text" : texts, }
+dataset = dataset.map(formatting_prompts_func, batched = True,)
+
+# Print the first example for sanity check
+print(f"First dataset example:\n\n{dataset[0]}")
 
 
 # ========
@@ -237,27 +249,26 @@ if max_steps != 0:
         ),
     )
 
-    if my_dataset != "cais/mmlu":
-        if "llama" in chat_template:
-            trainer = train_on_responses_only(
-                trainer,
-                instruction_part = "<|start_header_id|>user<|end_header_id|>\n\n",
-                response_part = "<|start_header_id|>assistant<|end_header_id|>\n\n",
-            )
-        elif "qwen3" in chat_template:
-            trainer = train_on_responses_only(
-                trainer,
-                instruction_part = "<|im_start|>user\n",
-                response_part = "<|im_start|>assistant\n",
-            )
-        elif chat_template == "gemma3":
-            trainer = train_on_responses_only(
-                trainer,
-                instruction_part = "<start_of_turn>user\n",
-                response_part = "<start_of_turn>model\n",
-            )
-        else:
-            raise ValueError(f"Unknown chat template {chat_template}")
+    if "llama" in chat_template:
+        trainer = train_on_responses_only(
+            trainer,
+            instruction_part = "<|start_header_id|>user<|end_header_id|>\n\n",
+            response_part = "<|start_header_id|>assistant<|end_header_id|>\n\n",
+        )
+    elif "qwen3" in chat_template:
+        trainer = train_on_responses_only(
+            trainer,
+            instruction_part = "<|im_start|>user\n",
+            response_part = "<|im_start|>assistant\n",
+        )
+    elif chat_template == "gemma3":
+        trainer = train_on_responses_only(
+            trainer,
+            instruction_part = "<start_of_turn>user\n",
+            response_part = "<start_of_turn>model\n",
+        )
+    else:
+        raise ValueError(f"Unknown chat template {chat_template}")
 
     # Show current memory stats
     gpu_stats = torch.cuda.get_device_properties(0)
